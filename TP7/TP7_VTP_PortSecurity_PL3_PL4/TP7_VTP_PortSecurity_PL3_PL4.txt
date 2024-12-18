@@ -1,0 +1,288 @@
+! VTP e Port Security - Cristiano Pendão (Aulas PL3 e PL4)
+! 28.11.2024
+
+! -------------------------------------------------------------------
+! a,b,c,d
+! -------------------------------------------------------------------
+
+!S0
+enable 
+conf term
+hostname S0
+
+!Desligar todas as interfaces
+interface range fa0/1-24
+shutdown
+interface range Gi0/1-2
+shutdown
+
+! Ativar/Config as interfaces em modo acesso S0
+interface fa0/6
+switchport mode access
+no shutdown
+
+interface fa0/11
+switchport mode access
+no shutdown
+
+interface fa0/18
+switchport mode access
+no shutdown
+
+! Ativar interface a usar como trunk
+interface fa0/1
+no shutdown
+end
+
+! Configurar o IP de gestao
+conf term
+interface vlan 99
+ip address 172.17.99.10 255.255.255.0
+no shutdown
+end
+
+!------------------------------------
+
+!S1
+enable
+conf term
+hostname S1
+
+! Desligar todas as interfaces
+interface range fa0/1-24
+shutdown
+interface range Gi0/1-2
+shutdown
+
+! Ativar interfaces a usar como trunk
+interface fa0/1
+no shutdown
+exit
+interface fa0/2
+no shutdown
+end
+
+! Configurar IP de gestao
+conf term
+interface vlan 99
+ip address 172.17.99.11 255.255.255.0
+no shutdown
+end
+
+!------------------------------------
+
+!S2
+enable 
+conf term
+hostname S2
+
+!Desligar todas as interfaces
+interface range fa0/1-24
+shutdown
+interface range Gi0/1-2
+shutdown
+
+! Ativar/Config as interfaces em modo acesso S2
+interface fa0/6
+switchport mode access
+no shutdown
+
+interface fa0/11
+switchport mode access
+no shutdown
+
+interface fa0/18
+switchport mode access
+no shutdown
+
+! Ativar interface a usar como trunk
+interface fa0/1
+no shutdown
+end
+
+! Configurar o IP de gestao
+conf term
+interface vlan 99
+ip address 172.17.99.13 255.255.255.0
+no shutdown
+end
+
+! -------------------------------------------------------------------
+! e. f. g. h.
+! -------------------------------------------------------------------
+
+!Executar no S0, S1, S2
+enable 
+conf term
+
+line console 0
+password cisco
+
+enable secret class
+
+no ip domain-lookup
+
+line vty 0 15
+password cisco
+
+! -------------------------------------------------------------------
+! i. VTP Server, VTP Cient, VTP Transparent
+! -------------------------------------------------------------------
+
+!S0 - VTP Server
+enable
+conf term
+vtp mode server
+vtp domain UTAD
+vtp password cisco
+end
+show vtp status
+
+!S1 - VTP Transparent
+enable
+conf term
+vtp mode transparent
+vtp domain UTAD
+vtp password cisco
+end
+show vtp status
+
+!S2 - VTP Client
+enable
+conf term
+vtp mode client
+vtp domain UTAD
+vtp password cisco
+end
+show vtp status
+
+! -------------------------------------------------------------------
+! j. Ativar linhas de trunk
+! -------------------------------------------------------------------
+
+!S0
+enable 
+conf term
+interface range fa0/1
+switchport mode trunk
+switchport trunk native vlan 99
+no shut
+end
+
+!S1
+enable 
+conf term
+interface range fa0/1-2
+switchport mode trunk
+switchport trunk native vlan 99
+no shut
+end
+
+!S2
+enable 
+conf term
+interface range fa0/1
+switchport mode trunk
+switchport trunk native vlan 99
+no shut
+end
+
+! -------------------------------------------------------------------
+! l. Configurar seguranca S0 e S2
+! -------------------------------------------------------------------
+
+!S0
+enable
+conf term
+interface fa0/6
+switchport port-security
+switchport port-security maximum 1
+switchport port-security mac-address sticky
+switchport port-security violation shutdown
+
+interface fa0/11
+switchport port-security
+switchport port-security maximum 1
+switchport port-security mac-address sticky
+switchport port-security violation shutdown
+
+interface fa0/18
+switchport port-security
+switchport port-security maximum 1
+switchport port-security mac-address sticky
+switchport port-security violation shutdown
+end
+
+!S2
+enable
+conf term
+interface fa0/6
+switchport port-security
+switchport port-security maximum 1
+switchport port-security mac-address sticky
+switchport port-security violation shutdown
+
+interface fa0/11
+switchport port-security
+switchport port-security maximum 1
+switchport port-security mac-address sticky
+switchport port-security violation shutdown
+
+interface fa0/18
+switchport port-security
+switchport port-security maximum 1
+switchport port-security mac-address sticky
+switchport port-security violation shutdown
+end
+
+! Verificar estado seguranca/eventos
+show mac-address-table
+show port-security interface Fa0/11
+show port-security
+
+! -------------------------------------------------------------------
+! m. Config VLANs no VTP Server
+! -------------------------------------------------------------------
+
+!S0
+enable
+conf term
+vlan 10
+name Alunos
+exit
+
+vlan 20
+name Docentes
+exit
+
+vlan 30
+name Funcionarios
+exit
+
+vlan 99
+name Gestao
+end
+
+! ------------------------------
+! Atribuir Portas a VLANs S0 e S2
+! ------------------------------
+enable 
+conf term
+!VLAN 10 
+interface range Fa0/11
+switchport  access vlan 10
+switchport  mode access
+exit
+
+!VLAN 20
+interface range Fa0/18
+switchport  access vlan 20
+switchport  mode access
+exit
+
+!VLAN 30
+interface range Fa0/6
+switchport  access vlan 30
+switchport  mode access
+end
+
